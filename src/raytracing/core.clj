@@ -6,10 +6,8 @@
            java.awt.Dimension
            java.awt.image.BufferedImage
            java.awt.Graphics
-           java.awt.Color))
-
-(def canvas (new BufferedImage 100 100 BufferedImage/TYPE_INT_ARGB))
-(.toString canvas)
+           java.awt.Color)
+  (:require shapes))
 
 (defn runme []
   (def width 800)
@@ -35,3 +33,4 @@
   ())
 
 (.invokeLater SwingUtilities (runme))
+(shapes/scalarMul (struct shapes/Vector 1 2 3) (struct shapes/Vector 3 3 3))

@@ -63,4 +63,8 @@
   (intersects? [_ ray] false) ;//todo
   (distanceTo [_ point] (/ (norm (vectorMul (sub start point) direction)) (norm direction))))
 
-
+(defrecord Sphere [center r]
+  Shape
+  (intersects? [_ ray] (< (distanceTo ray center) r))
+  (distanceTo [_ point] (- (norm (sub point center)) r))
+  )

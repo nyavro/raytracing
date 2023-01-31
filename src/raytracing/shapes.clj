@@ -4,11 +4,13 @@
 (defstruct Vector :x :y :z)
 
 (defn fromList [lst]
+  "Take first 3 items of a list to a Vector"
   (let [[x y z] lst]
     (struct Vector x y z))
   )
 
 (defn mul [v d]
+  "Multiplication of vector to a number"
   (fromList (map #(* % d) (vals v)))
   )
 
@@ -23,7 +25,23 @@
           (- (*(u :z) (v :x)) (*(u :x) (v :z)))
           (- (*(u :x) (v :y)) (*(u :y) (v :x)))))
 
-(def zero (struct Point 0.0 0.0 0.0))
+(defn add [& vs]
+  "Adds vectors"
+  (struct Vector
+          (reduce + (map #(% :x) vs))
+          (reduce + (map #(% :y) vs))
+          (reduce + (map #(% :z) vs))))
+
+(defn sub [u v]
+  (struct Vector
+          (- (u :x) (v :x))
+          (- (u :y) (v :y))
+          (- (u :z) (v :z))))
+
+(def zero
+  "Zero vector/point"
+  (struct Point 0.0 0.0 0.0)
+  )
 
 (defn norm [u]
   "Vector norm (length)"
@@ -36,7 +54,13 @@
   (equals? (vectorMul u v) zero))
 
 (defprotocol Shape
-  (intersects [ray])
-  (distanceTo [point])
+  (intersects? [this] [this ray])
+  (distanceTo [this] [this point])
   )
+
+(defrecord Ray [start direction]
+  Shape
+  (intersects? [_ ray] false) ;//todo
+  (distanceTo [_ point] (/ (norm (vectorMul (sub start point) direction)) (norm direction))))
+
 

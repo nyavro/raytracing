@@ -65,6 +65,10 @@
 
 (defrecord Sphere [center r]
   Shape
-  (intersects? [_ ray] (< (distanceTo ray center) r))
+  (intersects? [_ ray] (and (< (distanceTo ray center) r)) (> (scalarMul (:direction ray) (sub center (:start ray))) 0))
   (distanceTo [_ point] (- (norm (sub point center)) r))
   )
+
+;(def ray (Ray. (struct Point 3 1 -1) (struct Vector 2 1 2)))
+;(def sphere (Sphere. (struct Point 0 2 3) 7))
+;(intersects? sphere ray)

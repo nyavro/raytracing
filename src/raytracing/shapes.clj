@@ -1,9 +1,9 @@
-(ns shapes)
+(ns raytracing.shapes)
 
 (defstruct Point :x :y :z)
 (defstruct Vector :x :y :z)
 
-(defn fromList [lst]
+(defn createVector [lst]
   "Take first 3 items of a list to a Vector"
   (let [[x y z] lst]
     (struct Vector x y z))
@@ -11,7 +11,7 @@
 
 (defn mul [v d]
   "Multiplication of vector to a number"
-  (fromList (map #(* % d) (vals v)))
+  (createVector (map #(* % d) (vals v)))
   )
 
 (defn scalarMul [u v]
@@ -47,6 +47,12 @@
   "Vector norm (length)"
   (Math/sqrt (reduce + (map #(* % %) (vals u)))))
 
+(defn normalize [v]
+  (let [n (norm v)]
+    (if(== 0 n) zero (mul v (/ 1.0 n)))
+  )
+)
+
 (defn equals? [u v] (every? true? (map == (vals u) (vals v))))
 
 (defn collinear? [u v]
@@ -69,6 +75,6 @@
   (distanceTo [_ point] (- (norm (sub point center)) r))
   )
 
-;(def ray (Ray. (struct Point 3 1 -1) (struct Vector 2 1 2)))
-;(def sphere (Sphere. (struct Point 0 2 3) 7))
-;(intersects? sphere ray)
+(def ray (Ray. (struct Point 3 1 -1) (struct Vector 2 1 2)))
+(def sphere (Sphere. (struct Point 0 2 3) 7))
+(intersects? sphere ray)

@@ -71,7 +71,12 @@
 
 (defrecord Sphere [center r]
   Shape
-  (intersects? [_ ray] (and (< (distanceTo ray center) r)) (> (scalarMul (:direction ray) (sub center (:start ray))) 0))
+  (intersects? [_ ray]
+    (and
+      (< (distanceTo ray center) r)
+      (> (scalarMul (:direction ray) (sub center (:start ray))) 0)
+    )
+  )
   (distanceTo [_ point] (- (norm (sub point center)) r))
   )
 

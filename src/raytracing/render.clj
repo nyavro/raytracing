@@ -25,7 +25,18 @@
   )
 )
 
-(defn render [canvas shapes distanceToCanvas defaultColor]
+(defn min-by [fn col] (if (empty? col) nil (reduce #(if (< (fn %1) (fn %2)) %1 %2) col)))
+
+(defn sceneIntersect [ray shapes]
+  (min-by #(:distance %) (filter some? (map #(intersection % ray) shapes)))
+)
+
+(defn mulColor [color r]
+  (defn md [c] (int (* c r)))
+  (new Color (md (.getRed color)) (md (.getGreen color)) (md (.getBlue color)))
+)
+
+(defn renderDiffused [canvas shapes light distanceToCanvas defaultColor]
   (let [w (.getWidth canvas)
         h (.getHeight canvas)
         hw (/ w 2)
@@ -33,17 +44,22 @@
         ]
     (defn calcColor [x y]
       (let [x' (- x hw) y' (- y hh)
-            ray (raytracing.shapes.Ray. zero (normalize (struct Vector x' y' (- 0 distanceToCanvas))))]
-        (diffuse
-          (or
-            (some #(when (intersects? % ray) %) shapes)
+            ray (raytracing.shapes.Ray. zero (normalize (struct Vector x' y' (- 0 distanceToCanvas))))
+            intersection (sceneIntersect ray shapes)
+            diffuseLightIntensity (
+                                    if intersection
+                                      (* (:intensity light) (max 0 (scalarMul (normalize (sub (:position light) (:hit intersection))) (:N intersection))))
+                                      0.0
+                                  )
+           ]
+          (if intersection
+            (mulColor (diffuseColor (:material intersection)) diffuseLightIntensity)
             defaultColor
           )
-        )
       )
     )
     (dorun
-      (for [x (range 0 w) y (range 0 h)] (.setRGB canvas x y (calcColor x y)))
-      )
+        (for [x (range 0 w) y (range 0 h)] (.setRGB canvas x y (.getRGB (calcColor x y))))
     )
   )
+)

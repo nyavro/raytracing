@@ -59,6 +59,11 @@
   "Checks if two vectors are collinear"
   (equals? (vectorMul u v) zero))
 
+;Lights
+(defstruct Light :position :intensity)
+
+(defstruct Intersection :distance :hit :N :material)
+
 ;Materials
 (defprotocol Material
   (diffuseColor [this] [this color])
@@ -78,24 +83,41 @@
 
 ;Shapes
 (defprotocol Shape
-  (intersects? [this] [this ray])
+  (intersection [this] [this ray])
   (distanceTo [this] [this point])
   (diffuse [this] [this color])
 )
 
 (defrecord Ray [start direction]
   Shape
-  (intersects? [_ ray] false) ;//todo
+  (intersection [_ ray] false) ;//todo
   (distanceTo [_ point] (/ (norm (vectorMul (sub start point) direction)) (norm direction)))
   (diffuse [_ _] nil)
 )
 
 (defrecord Sphere [center r material]
   Shape
-  (intersects? [_ ray]
-    (and
-      (< (distanceTo ray center) r)
-      (> (scalarMul (:direction ray) (sub center (:start ray))) 0)
+  (intersection [_ ray]
+    (let
+      [ d (normalize (:direction ray))
+        sc (sub center (:start ray))
+        dsc (scalarMul d sc)
+        r2 (* r r)
+        t (- (scalarMul sc sc) (* dsc dsc))
+        thc (Math/sqrt (- r2 t))
+      ]
+      (if (> t r2)
+        nil
+        (if (> dsc thc)
+          (let [distance (- dsc thc)
+                hit (mul d distance)
+                N (normalize (sub hit center))
+               ]
+            (struct Intersection distance hit N material)
+          )
+          nil
+        )
+      )
     )
   )
   (distanceTo [_ point] (- (norm (sub point center)) r))
@@ -108,6 +130,6 @@
   (diffuse [_] (diffuseColor material))
 )
 
-(def ray (Ray. (struct Point 3 1 -1) (struct Vector 2 1 2)))
+(def ray (Ray. (struct Point 0 0 0) (struct Vector 0 2 3)))
 (def sphere (Sphere. (struct Point 0 2 3) 7 0))
-(intersects? sphere ray)
+(intersection sphere ray)

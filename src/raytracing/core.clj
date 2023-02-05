@@ -34,21 +34,27 @@
   (let
     [
       canvas (new BufferedImage 800 600 BufferedImage/TYPE_INT_ARGB)
-      rubber (raytracing.shapes.Rubber. (.getRGB (new Color 0 0 0)))
-      ivory (raytracing.shapes.Rubber. (.getRGB (new Color 100 100 0)))
-      default (raytracing.shapes.DefaultShape. (raytracing.shapes.Rubber. (.getRGB (new Color 100 100 100))))
+      rubber (raytracing.shapes.Rubber. (new Color 75 25 25))
+      ivory (raytracing.shapes.Rubber. (new Color 100 100 75))
+      wood (raytracing.shapes.Rubber. (new Color 200 100 75))
+      defaultColor (new Color 100 100 100)
+      default (raytracing.shapes.DefaultShape. (raytracing.shapes.Rubber. defaultColor))
+      mainLight (struct Light (struct Point -2000 -2000 0) 1.0)
     ]
     do
     ;(fillGrad canvas)
-      (render
+      (renderDiffused
         canvas
         [
-          (raytracing.shapes.Sphere. (struct Point 300 300 -4000) 100 ivory)
+          (raytracing.shapes.Sphere. (struct Point 350 350 -4000) 200 ivory)
+          (raytracing.shapes.Sphere. (struct Point -350 350 -4000) 100 wood)
           (raytracing.shapes.Sphere. (struct Point -300 -300 -4000) 150 rubber)
           (raytracing.shapes.Sphere. (struct Point 100 -100 -3000) 300 rubber)
+          (raytracing.shapes.Sphere. (struct Point -200 -200 -3500) 200 ivory)
         ]
+        mainLight
         2000
-        default
+        defaultColor
       )
       (runme canvas)
   )

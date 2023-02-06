@@ -64,28 +64,13 @@
 
 (defstruct Intersection :distance :hit :N :material)
 
-;Materials
-(defprotocol Material
-  (diffuseColor [this] [this color])
-)
-
-(defrecord Rubber [color]
-  Material
-  (diffuseColor [_] color)
-  (diffuseColor [this c] color)
-)
-
-(defrecord Ivory [color]
-  Material
-  (diffuseColor [_] color)
-  (diffuseColor [_ _] color)
-)
+(defstruct Material :color :albedo :specularExponent)
 
 ;Shapes
 (defprotocol Shape
   (intersection [this] [this ray])
   (distanceTo [this] [this point])
-  (diffuse [this] [this color])
+  (diffuse [this] [this material])
 )
 
 (defrecord Ray [start direction]
@@ -121,13 +106,13 @@
     )
   )
   (distanceTo [_ point] (- (norm (sub point center)) r))
-  (diffuse [_ color] (diffuseColor material color))
-  (diffuse [_] (diffuseColor material))
+  (diffuse [_ color] (:color material color))
+  (diffuse [_] (:color material))
 )
 
 (defrecord DefaultShape [material]
   Shape
-  (diffuse [_] (diffuseColor material))
+  (diffuse [_] (:color material))
 )
 
 (def ray (Ray. (struct Point 0 0 0) (struct Vector 0 2 3)))

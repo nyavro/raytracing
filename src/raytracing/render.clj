@@ -32,11 +32,16 @@
 )
 
 (defn mulColor [color r]
-  (defn md [c] (int (* c r)))
+  (defn md [c] (min 255 (int (rem (* c r) 300))))
   (new Color (md (.getRed color)) (md (.getGreen color)) (md (.getBlue color)))
 )
 
-(defn renderDiffused [canvas shapes light distanceToCanvas defaultColor]
+(defn addColors [a b]
+  (defn md [x y] (min 255 (+ x y)))
+  (new Color (md (.getRed a) (.getRed b)) (md (.getGreen a) (.getGreen b)) (md (.getBlue a) (.getBlue b)))
+)
+
+(defn renderDiffused [canvas shapes lights distanceToCanvas defaultColor]
   (let [w (.getWidth canvas)
         h (.getHeight canvas)
         hw (/ w 2)
@@ -47,19 +52,76 @@
             ray (raytracing.shapes.Ray. zero (normalize (struct Vector x' y' (- 0 distanceToCanvas))))
             intersection (sceneIntersect ray shapes)
             diffuseLightIntensity (
-                                    if intersection
-                                      (* (:intensity light) (max 0 (scalarMul (normalize (sub (:position light) (:hit intersection))) (:N intersection))))
-                                      0.0
-                                  )
+              if intersection
+                (reduce + (map #(* (:intensity %) (max 0 (scalarMul (normalize (sub (:position %) (:hit intersection))) (:N intersection)))) lights))
+                0.0
+            )
            ]
           (if intersection
-            (mulColor (diffuseColor (:material intersection)) diffuseLightIntensity)
+            (addColors
+              (mulColor (:color (:material intersection)) diffuseLightIntensity)
+              (new Color 255 255 255)
+            )
             defaultColor
           )
       )
     )
     (dorun
         (for [x (range 0 w) y (range 0 h)] (.setRGB canvas x y (.getRGB (calcColor x y))))
+    )
+  )
+)
+
+(defn reflect [v N] (sub v (mul N (* (scalarMul v N) 2.0))))
+
+(defn renderSpecular [canvas shapes lights distanceToCanvas defaultColor]
+  (let [w (.getWidth canvas)
+        h (.getHeight canvas)
+        hw (/ w 2)
+        hh (/ h 2)
+       ]
+    (defn calcColor [x y]
+      (let [x' (- x hw) y' (- y hh)
+            ray (raytracing.shapes.Ray. zero (normalize (struct Vector x' y' (- 0 distanceToCanvas))))
+            intersection (sceneIntersect ray shapes)
+            diffuseLightIntensity (
+              if intersection
+                (reduce + (map #(* (:intensity %) (max 0.0 (scalarMul (normalize (sub (:position %) (:hit intersection))) (:N intersection)))) lights))
+                0.0
+              )
+            specularLightIntensity (
+              if intersection
+                (reduce +
+                  (map
+                    #(*
+                       (:intensity %)
+                       (Math/pow
+                         (max
+                           0.0
+                           (let [lightDir (normalize (sub (:position %) (:hit intersection)))]
+                             (scalarMul (reflect lightDir (:N intersection)) (:direction ray))
+                           )
+                         )
+                         (:specularExponent (:material intersection))
+                       )
+                     )
+                    lights
+                  )
+                )
+                0.0
+              )
+            ]
+        (if intersection
+          (addColors
+            (mulColor (:color (:material intersection)) (* diffuseLightIntensity (nth (:albedo (:material intersection)) 0)))
+            (mulColor (new Color 255 255 255) (* specularLightIntensity (nth (:albedo (:material intersection)) 1)))
+          )
+          defaultColor
+        )
+      )
+    )
+  (dorun
+    (for [x (range 0 w) y (range 0 h)] (.setRGB canvas x y (.getRGB (calcColor x y))))
     )
   )
 )

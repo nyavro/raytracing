@@ -33,7 +33,7 @@
   [& args]
   (let
     [
-      canvas (new BufferedImage 800 600 BufferedImage/TYPE_INT_ARGB)
+      canvas (new BufferedImage 1024 768 BufferedImage/TYPE_INT_ARGB)
       rubber (struct Material (new Color 75 25 25) '(0.9 0.1) 10.0)
       ivory (struct Material (new Color 100 100 75) '(0.6 0.3) 50.0)
       wood (struct Material (new Color 200 100 75) '(0.6 0.3) 50.0)
@@ -45,14 +45,14 @@
         [
           (raytracing.shapes.Sphere. (struct Point 350 350 -4000) 200 ivory)
           (raytracing.shapes.Sphere. (struct Point -350 350 -4000) 100 wood)
-          (raytracing.shapes.Sphere. (struct Point -300 -300 -4000) 150 rubber)
+          (raytracing.shapes.Sphere. (struct Point -300 -200 -2000) 150 rubber)
           (raytracing.shapes.Sphere. (struct Point 100 -100 -3000) 300 rubber)
           (raytracing.shapes.Sphere. (struct Point -200 -200 -3500) 200 ivory)
         ]
         [
-          (struct Light (struct Point -2000 2000 2000) 0.7)
-          (struct Light (struct Point 3000 5000 -2500) 0.8)
-          (struct Light (struct Point 3000 2000 3000) 0.8)
+          (struct Light (struct Point -2000 -2000 2000) 0.7)
+          (struct Light (struct Point 3000 -5000 -2500) 0.8)
+          (struct Light (struct Point 3000 -2000 3000) 0.8)
         ]
         2000
         defaultColor

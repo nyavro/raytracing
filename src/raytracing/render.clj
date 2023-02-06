@@ -74,6 +74,20 @@
 
 (defn reflect [v N] (sub v (mul N (* (scalarMul v N) 2.0))))
 
+(defn isLightVisible? [shapes point N light]
+  (let [diffractionEpsilon (mul N 0.001)
+        shadowDirection (sub (:position light) point)
+        shadowOrigin ((if (< (scalarMul shadowDirection N) 0) sub add) point diffractionEpsilon)
+        lightDistance (norm shadowDirection)
+        intersection (sceneIntersect (raytracing.shapes.Ray. shadowOrigin shadowDirection) shapes)
+       ]
+    (not (and
+      intersection
+      (< (norm (sub (:hit intersection) shadowOrigin)) lightDistance)
+    ))
+  )
+)
+
 (defn renderSpecular [canvas shapes lights distanceToCanvas defaultColor]
   (let [w (.getWidth canvas)
         h (.getHeight canvas)
@@ -84,37 +98,23 @@
       (let [x' (- x hw) y' (- y hh)
             ray (raytracing.shapes.Ray. zero (normalize (struct Vector x' y' (- 0 distanceToCanvas))))
             intersection (sceneIntersect ray shapes)
-            diffuseLightIntensity (
-              if intersection
-                (reduce + (map #(* (:intensity %) (max 0.0 (scalarMul (normalize (sub (:position %) (:hit intersection))) (:N intersection)))) lights))
-                0.0
-              )
-            specularLightIntensity (
-              if intersection
-                (reduce +
-                  (map
-                    #(*
-                       (:intensity %)
-                       (Math/pow
-                         (max
-                           0.0
-                           (let [lightDir (normalize (sub (:position %) (:hit intersection)))]
-                             (scalarMul (reflect lightDir (:N intersection)) (:direction ray))
-                           )
-                         )
-                         (:specularExponent (:material intersection))
-                       )
-                     )
-                    lights
-                  )
-                )
-                0.0
-              )
-            ]
+           ]
         (if intersection
-          (addColors
-            (mulColor (:color (:material intersection)) (* diffuseLightIntensity (nth (:albedo (:material intersection)) 0)))
-            (mulColor (new Color 255 255 255) (* specularLightIntensity (nth (:albedo (:material intersection)) 1)))
+          (let [visibleLights (filter #(isLightVisible? shapes (:hit intersection) (:N intersection) %) lights)
+                diffuseLightIntensity (reduce + (map #(* (:intensity %) (max 0.0 (scalarMul (normalize (sub (:position %) (:hit intersection))) (:N intersection)))) visibleLights))
+                specularLightIntensity (reduce + (map #(* (:intensity %)
+                                                      (Math/pow
+                                                        (max 0.0
+                                                          (let [lightDir (normalize (sub (:position %) (:hit intersection)))]
+                                                            (scalarMul (reflect lightDir (:N intersection)) (:direction ray)))
+                                                          )
+                                                        (:specularExponent (:material intersection))
+                                                      )) visibleLights))
+                ]
+            (addColors
+              (mulColor (:color (:material intersection)) (* diffuseLightIntensity (nth (:albedo (:material intersection)) 0)))
+              (mulColor (new Color 255 255 255) (* specularLightIntensity (nth (:albedo (:material intersection)) 1)))
+            )
           )
           defaultColor
         )
